@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ title }} &middot; Memelicious</title>
+    <link rel="shortcut icon" href="{{ url_for('static',filename='img/favicon.ico') }}"/>
+    <meta charset="utf-8"/>
+    <meta name="author" content="Brendon Curmi"/>
+    {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/bootstrap.min.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/simple-sidebar.css') }}">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}"/>
+</head>
+<noscript>
+    <div style="margin-top: 10px; text-align: center;" class="alert alert-warning">
+        <strong>Our website needs JavaScript to function properly.</strong> <a href="http://www.enable-javascript.com" target="_blank" title="Once enabled please reload this page" style="font-weight: bold;"><em>How do I enable JavaScript?</em></a>
+    </div>
+</noscript>
+{% block overwriteBodyOpen %}<body>{% endblock %}
+{% if sidebar == null or sidebar == true %}
+    <div id="wrapper" class="toggled">
+        <div id="sidebar-wrapper" style="overflow: hidden">
+            <ul class="sidebar-nav"><!-- d-lg-block d-md-none -->
+                <li class="sidebar-brand"><a href="/">Memelicious</a></li>
+                <li><a href="tos">Terms of Service</a></li>
+                {% if session["username"] %}
+                    <li><a href="/profile/{{ session["username"] }}">{{ session["username"] }}</a></li>
+                    <li>
+                        <form action="/upload" id="upload-meme" method="POST" enctype="multipart/form-data">
+                            <label for="file" style="cursor: pointer">
+                                <input type="file" name="file" id="file" style="visibility: hidden; float: left; width: 0; height: 0" multiple/>Select Meme
+                            </label>
+                            <label id="upload-meme-btn" style="margin-top: -5px; margin-bottom: 0; cursor: pointer">Upload Meme</label>
+                        </form>
+                        <script>
+                            document.getElementById("upload-meme-btn").addEventListener("click", function() {
+                                document.getElementById("upload-meme").submit();
+                            });
+                        </script>
+                    </li>
+                    <li><a href="logout">Log Out</a></li>
+                {% else %}
+                    <li><a href="gateway">Log In</a></li>
+                    <li><a href="gateway?reg=true">Sign Up</a></li>
+                {% endif %}
+            </ul>
+            <ul class="sidebar-nav bottom" style="top: 730px">
+                <li><label style="color: grey; background-color: black">Made by Brendon Curmi</label></li>
+            </ul>
+        </div>
+    </div>
+{% endif %}
+{% if (indent == null or indent == true) and (sidebar == null or sidebar == true) %}<div class="content">{% endif %}
+{% if masthead %}<h2 style="color: lightgray">{{ masthead }}</h2><br/>{% endif %}
+{% block body %}{% endblock %}
+{% if (indent == null or indent == true) and (sidebar == null or sidebar == true) %}</div>{% endif %}
+{% block overwriteBodyClose %}</body>{% endblock %}
+<footer {% if sidebar == null or sidebar == true %}class="content"{% endif %}>
+    {% block footer %}{% endblock %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.5/umd/popper.min.js"></script>
+    <script src="{{ url_for('static',filename='js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static',filename='js/Cookies.src.js') }}"></script>
+    <script>
+        setInterval(function() {
+            $("ul.bottom").css("top", $(window).height() - 30);
+        }, 2000);
+    </script>
+</footer>
+{% block scripts %}{% endblock %}
+</html>
+{#<li>#}
+{#    <a>#}
+{#        <form action="/upload" id="upload-meme" method="POST" enctype="multipart/form-data">#}
+{#            <label for="file" style="float: left; color: grey">#}
+{#                <input type="file" name="file" id="file" style="visibility: hidden; width: 0; height: 0" multiple/>Select Meme#}
+{#            </label>#}
+{#            <label id="upload-meme-btn" style="color: grey">Upload Meme</label>#}
+{#            <!-- <input type="submit" name="submit" id="submit" value="Upload Image"/> -->#}
+{#        </form>#}
+{#    </a>#}
+{#    <script>#}
+{#        document.getElementById("upload-meme-btn").addEventListener("click", function() {#}
+{#            document.getElementById("upload-meme").submit();#}
+{#        });#}
+{#    </script>#}
+{#</li>#}

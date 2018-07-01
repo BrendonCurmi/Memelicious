@@ -1,0 +1,6 @@
+/.idea
+/__pycache__
+/static/img
+/static/database.db
+database.db
+variables.py

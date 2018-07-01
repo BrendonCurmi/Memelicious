@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block overwriteBodyOpen %}
+{#    <style>#}
+{#    .box {#}
+{#        background-color: white;#}
+{#        padding-left: 20px;#}
+{#    }#}
+{#    .msg {#}
+{#        width: 100px;#}
+{#        margin-top: 10px;#}
+{#        padding: 5px;#}
+{#        border-radius: 10px;#}
+{#    }#}
+{#    .me {#}
+{#        color: white;#}
+{#        background-color: #00aaeb;#}
+{#    }#}
+{#    .other {#}
+{#        color: black;#}
+{#        background-color: lightgray;#}
+{#    }#}
+{#    </style>#}
+{#    <div class="box">#}
+{#        <br/>#}
+{#        <br/>#}
+{#        <p class="msg me" style="margin-left: 150px">Hey, you wanna go out sometime?</p>#}
+{#        <p class="msg other">I only date religious guys.</p>#}
+{#        <br/>#}
+{#        <br/>#}
+{##}
+{#    </div>#}
+{#    <br/>#}
+{#    <img src="https://scontent.fmla1-2.fna.fbcdn.net/v/t34.0-12/19512166_1402579299836506_1672121839_n.jpg?oh=e640708115613158396acc6e1b063cb2&oe=5A487ACA">#}
+    <body style="overflow-y: hidden;">
+    <div class="looking-glass">
+{% endblock %}
+
+{% block body %}
+    {% for x in range(1, 3) %}
+        <div id="window-{% print "%s" % x %}" class="viewing-window" style="grid-area: view-{% print "%s" % x %}" onscroll="scrolling({% print "%s" % x %});">
+            <div style="background-color: #00aaeb; position: absolute">
+                <div class="dropdown" id="view-dropdown-{% print "%s" % x %}">
+                    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Choose Feed<span class="caret"></span></button>
+                    <ul class="dropdown-menu">
+                        <li onclick="switchFeeds({% print "%s" % x %}, 1);"><a href="javascript:void(0);">Local</a></li>
+                        <li onclick="switchFeeds({% print "%s" % x %}, 2);"><a href="javascript:void(0);">Random</a></li>
+                        <li onclick="switchFeeds({% print "%s" % x %}, 3);"><a href="javascript:void(0);">External</a></li>
+                        <li onclick="switchFeeds({% print "%s" % x %}, 4);"><a href="javascript:void(0);">By Tags</a></li>
+                        <li onclick="switchFeeds({% print "%s" % x %}, 0);"><a href="javascript:void(0);">Empty</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div id="feed-{% print "%s" % x %}"></div>
+        </div>
+    {% endfor %}
+{% endblock %}
+
+{% block overwriteBodyClose %}
+    </div>
+    </body>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        setInterval(function() {
+            if ($(window).width() <= 900) document.getElementById("window-2").style.display = "none";
+            else document.getElementById("window-2").style.display = "inline";
+        }, 5000);
+
+        const FEEDS = {
+            0: {
+                name: "Choose Feed"
+            }, 1: {
+                name: "Local",
+                cookie: "feed1progress",
+                switching: function() {
+                    Cookies.set(this.cookie, "0");
+                }, done: function(data) {
+                    Cookies.set(FEEDS[1].cookie, data.highestid + "");
+                }, scrolling: function(type, view) {
+                    Cookies.set(this.cookie, parseInt(Cookies.get(this.cookie)) - 30);
+                    if (parseInt(Cookies.get(this.cookie)) > 30) sendRequest(type, parseInt(Cookies.get(this.cookie)), view, null, false);
+                }
+            }, 2: {
+                name: "Random",
+                scrolling: function(type, view) {
+                    sendRequest(type, 0, view, null, false);
+                }
+            }
+        };
+
+        function getFeedFromName(name) {
+            for (f in FEEDS) if (FEEDS[f].hasOwnProperty("name") && FEEDS[f].name === name) return f;
+        }
+
+        function switchFeeds(view, feed) {
+            if ($("#view-dropdown-" + view + " ul.dropdown-menu li:nth-child(" + feed + ")").hasClass("disabled")) return;
+
+            var invView = (view === 1) ? 2 : 1;
+            $("#view-dropdown-" + invView + " ul.dropdown-menu li").siblings().removeClass("disabled");
+            if (feed !== 0) $("#view-dropdown-" + invView + " ul.dropdown-menu li:nth-child(" + feed + ")").addClass("disabled");
+
+            Cookies.set("view" + view, "");
+
+            if (feed === 0) {
+                updateFeed(view, FEEDS[0].name, "", true);
+                return;
+            }
+
+            if (FEEDS[feed].switching) FEEDS[feed].switching();
+            sendRequest(feed, 0, view, FEEDS[feed].done, true);
+        }
+
+        function sendRequest(type, start, view, done, clean) {
+            $.ajax({
+                data: {
+                    type: type,
+                    pool: Cookies.get("view" + view),
+                    start: start
+                },
+                type: "POST",
+                url: "/get_memes"
+            }).done(function(data) {
+                Cookies.set("view" + view, data.pool);
+                if (done) done(data);
+                var html = "";
+                for (var i = 0; i < data.memes.length; i++) html += "<img class='meme' src='{{ url_for("static",filename="img/upload/") }}" + data.memes[i] + "'/><br/>";
+                updateFeed(view, FEEDS[type].name, html, clean);
+            });
+        }
+
+        function updateFeed(view, button, html, clean) {
+            if (clean) document.getElementById("feed-" + view).innerHTML = html;
+            else document.getElementById("feed-" + view).innerHTML += html;
+            $("#view-dropdown-" + view + " button").text(button);
+        }
+
+        var canScroll = true;
+
+        function scrolling(view) {
+            var viewEl = $("#window-" + view);
+            var scrollLeft = viewEl[0].scrollHeight - viewEl.height();
+
+            if (scrollLeft - 1 <= viewEl.scrollTop() && canScroll) {
+                canScroll = false;
+                setTimeout(function() {
+                    canScroll = true;
+                }, 2000);
+
+                var type = $("#view-dropdown-" + view + " button").text();
+                type = getFeedFromName(type);
+                FEEDS[type].scrolling(type, view);
+            }
+        }
+    </script>
+{% endblock %}
